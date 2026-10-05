@@ -1,0 +1,61 @@
+#include <stdio.h>
+#include <stdint.h>
+#include "driver/i2c_master.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#define SDA_PIN 9
+#define SCL_PIN 10
+#define PM2009_ADDR 0x28
+
+void app_main(void)
+{
+    // 1) I2C 버스 켜기
+    i2c_master_bus_config_t bus_cfg = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = SDA_PIN,
+        .scl_io_num = SCL_PIN,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus;
+    i2c_new_master_bus(&bus_cfg, &bus);
+
+    // 2) PM2009(0x28) 등록, 속도 50kHz
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = PM2009_ADDR,
+        .scl_speed_hz = 50000,
+    };
+    i2c_master_dev_handle_t dev;
+    i2c_master_bus_add_device(bus, &dev_cfg, &dev);
+
+    while (1) {
+        int ok = 0;
+        for (int n = 0; n < 3 && !ok; n++) {
+            uint8_t rx[32];
+
+            // 3) 32바이트 읽기 (별도 명령 없이 읽기만 하면 됨)
+            if (i2c_master_receive(dev, rx, 32, 300) == ESP_OK) {
+
+                // 4) 체크섬: 앞 31바이트를 모두 XOR 한 값이 마지막 바이트와 같아야 정상
+                uint8_t cs = 0;
+                for (int i = 0; i < 31; i++) cs ^= rx[i];
+
+                if (rx[0] == 0x16 && cs == rx[31]) {
+                    // 5) 2바이트씩 합쳐서 농도 계산
+                    int pm1  = rx[7]  * 256 + rx[8];
+                    int pm25 = rx[9]  * 256 + rx[10];
+                    int pm10 = rx[11] * 256 + rx[12];
+                    printf("PM1.0: %d | PM2.5: %d | PM10: %d ug/m3 | 상태: 0x%02X\n",
+                           pm1, pm25, pm10, rx[2]);
+                    ok = 1;
+                }
+            }
+            if (!ok) vTaskDelay(pdMS_TO_TICKS(200));
+        }
+        if (!ok) printf("읽기 실패 (3회 재시도)\n");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}

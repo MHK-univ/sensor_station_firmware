@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <stdint.h>
+#include "driver/i2c_master.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#define SDA_PIN 9
+#define SCL_PIN 10
+#define CM1107_ADDR 0x31
+
+void app_main(void)
+{
+    // 1) I2C 버스 켜기
+    i2c_master_bus_config_t bus_cfg = {
+        .i2c_port = I2C_NUM_0,
+        .sda_io_num = SDA_PIN,
+        .scl_io_num = SCL_PIN,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus;
+    i2c_new_master_bus(&bus_cfg, &bus);
+
+    // 2) CM1107(0x31)을 버스에 등록 (속도는 느리게 50kHz)
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = CM1107_ADDR,
+        .scl_speed_hz = 20000,
+    };
+    i2c_master_dev_handle_t dev;
+    i2c_master_bus_add_device(bus, &dev_cfg, &dev);
+
+    while (1) {
+        int ok = 0;
+        for (int n = 0; n < 3 && !ok; n++) {
+            uint8_t cmd = 0x01;
+            uint8_t rx[5];
+            i2c_master_transmit(dev, &cmd, 1, 200);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            if (i2c_master_receive(dev, rx, 5, 200) == ESP_OK &&
+                (uint8_t)(0 - (rx[0] + rx[1] + rx[2] + rx[3])) == rx[4]) {
+                printf("CO2: %d ppm | 상태: %d\n", rx[1] * 256 + rx[2], rx[3]);
+                ok = 1;
+            }
+        }
+        if (!ok) printf("읽기 실패 (3회 재시도)\n");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
