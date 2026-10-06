@@ -20,7 +20,6 @@
 **/build/
 build/
 *.o
-*.a
 *.out
 *.exe # For any host-side utilities compiled on Windows
 
@@ -76,3 +75,4 @@ Desktop.ini
 *.workspace # General workspace files, can be from various tools
 *.suo       # Visual Studio Solution User Options
 *.sln.docstates # Visual Studio
+.vscode/c_cpp_properties.json # Visual Studio Code C/C++ extension settings
