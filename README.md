@@ -76,7 +76,7 @@ CAP_SensorStation/
 ├─ components/      # 센서별 드라이버 (bme280, cm1107, pm2009, cb_hcho)
 ├─ docs/            # 회로도, 데이터시트, 테스트 결과
 ├─ hardware/        # 회로도(SchDoc), PCB, 패키징(STEP)
-├─ Reference/       # 센서별 단독 테스트 코드 (보관용)
+├─ archieve/       # 센서별 단독 테스트 코드 (보관용)
 ├─ sdkconfig.defaults
 └─ partitions.csv   # OTA 파티션 테이블
 ```
