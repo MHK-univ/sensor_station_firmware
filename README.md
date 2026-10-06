@@ -35,7 +35,7 @@ Edge AI 기반 환경 센서 스테이션 및 실시간 모니터링 플랫폼 �
 | 신호 | ESP32-S3 | 연결 대상 |
 |---|---|---|
 | I2C SDA | GPIO9 | BME280, PM2009, CM1107 (공용 버스, 4.7kΩ 풀업 → 3.3V) |
-| I2C SCL | GPIO14 | BME280, PM2009, CM1107 (공용 버스, 4.7kΩ 풀업 → 3.3V) |
+| I2C SCL | GPIO10 | BME280, PM2009, CM1107 (공용 버스, 4.7kΩ 풀업 → 3.3V) |
 | UART TX | TXD0 | CB-HCHO RXD |
 | UART RX | RXD0 | CB-HCHO TXD |
 | BT+ / BT- | 배터리 커넥터 | LiPo 3.7V |
